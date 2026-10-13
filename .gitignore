@@ -1,6 +1,12 @@
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 .pytest_cache/
+.ruff_cache/
+.coverage
+.venv/
+venv/
+.env
+.env.*
+!.env.example
 results.csv
 output.csv

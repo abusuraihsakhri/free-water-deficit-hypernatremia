@@ -2,111 +2,120 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Free Water Deficit Hypernatremia API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
-    "version": "3.0.0-ENTERPRISE",
-    "contact": {
-      "name": "Dr. Abu Suraih Sakhri",
-      "url": "https://github.com/abusuraihsakhri"
-    }
+    "version": "3.1.0",
+    "description": "Validated adult free-water deficit estimates; legacy audit-demo endpoints are not clinical decision support."
   },
   "paths": {
     "/health": {
       "get": {
-        "summary": "Health and metadata check",
+        "summary": "Health check",
         "responses": {
           "200": {
-            "description": "System optimal"
+            "description": "Service status"
+          }
+        }
+      }
+    },
+    "/api/water-deficit": {
+      "post": {
+        "summary": "Compute adult TBW, free-water deficit and estimated Na change per litre",
+        "description": "Estimates only; excludes ongoing losses and correction-rate selection.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "weight_kg",
+                  "serum_sodium",
+                  "tbw_fraction"
+                ],
+                "properties": {
+                  "weight_kg": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 500
+                  },
+                  "serum_sodium": {
+                    "type": "number",
+                    "exclusiveMinimum": 145,
+                    "maximum": 250
+                  },
+                  "tbw_fraction": {
+                    "type": "number",
+                    "minimum": 0.3,
+                    "maximum": 0.8
+                  },
+                  "target_sodium": {
+                    "type": "number",
+                    "default": 140,
+                    "minimum": 120,
+                    "maximum": 200
+                  },
+                  "fluid_sodium": {
+                    "type": "number",
+                    "default": 0,
+                    "minimum": 0,
+                    "maximum": 600
+                  },
+                  "fluid_potassium": {
+                    "type": "number",
+                    "default": 0,
+                    "minimum": 0,
+                    "maximum": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Calculated values; does not prescribe infusion"
+          },
+          "422": {
+            "description": "Invalid input"
           }
         }
       }
     },
     "/metrics": {
       "get": {
-        "summary": "Prometheus operational metrics",
+        "summary": "Legacy audit counters (JSON)",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "Process-local counters"
           }
         }
       }
     },
     "/api/audit": {
       "post": {
-        "summary": "Dispatch task payload across specialized workers",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "task_id": {
-                    "type": "string"
-                  },
-                  "target_identifier": {
-                    "type": "string"
-                  },
-                  "primary_metric": {
-                    "type": "number"
-                  },
-                  "secondary_metric": {
-                    "type": "number"
-                  },
-                  "status_descriptor": {
-                    "type": "string"
-                  },
-                  "is_critical_flag": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "task_id",
-                  "target_identifier",
-                  "primary_metric"
-                ]
-              }
-            }
-          }
-        },
+        "summary": "Legacy generic audit demonstration",
         "responses": {
           "200": {
-            "description": "Consensus dossier with HMAC signature"
+            "description": "Generic alert dossier"
           }
         }
       }
     },
     "/api/chat": {
       "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "query": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "query"
-                ]
-              }
-            }
-          }
-        },
+        "summary": "Legacy simulated response (no real model inference)",
         "responses": {
           "200": {
-            "description": "Supervisory response"
+            "description": "Simulated response"
           }
         }
       }
     },
     "/api/audit/logs": {
       "get": {
-        "summary": "Retrieve and cryptographically verify HMAC audit trail",
+        "summary": "Process-local HMAC audit entries",
         "responses": {
           "200": {
-            "description": "Cryptographic audit trail"
+            "description": "Audit chain and verification status"
           }
         }
       }

@@ -1,40 +1,64 @@
-name: Free Water Deficit Hypernatremia CI/CD & Security Verification
-
+name: Tests and security checks
 on:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
   pull_request:
-    branches: [ master, main ]
-
+    branches: [master, main]
+permissions:
+  contents: read
 jobs:
-  test-and-audit:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
-
-    - name: Run Pytest Suite
-      run: |
-        pytest -v
-
-    - name: Security SAST & Zero-PHI Audit
-      run: |
-        python -c "
-        from agents.base import PHIGuard, AuditLogger
-        import pytest
-        assert AuditLogger.verify_integrity() is True
-        print('Security & Zero-PHI Audit Passed!')
-        "
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Python bytecode verification
+        run: python -m compileall -q agents water_deficit.py cli.py tests
+      - name: Python tests
+        run: python -m pytest -q
+      - name: Dependency vulnerability audit
+        run: |
+          python -m pip install pip-audit
+          python -m pip_audit -r requirements.txt
+      - name: Browser calculation tests
+        run: node --test tests/test_web.mjs
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Pages asset delivery
+        run: |
+          python3 -m http.server 8765 --directory web >/tmp/pages-smoke.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in 1 2 3 4 5; do curl -fsS http://127.0.0.1:8765/ -o /tmp/site.html && break || sleep 1; done
+          grep -q 'id="calculator"' /tmp/site.html
+          curl -fsS http://127.0.0.1:8765/app.mjs | grep -q calculateMetrics
+          curl -fsS http://127.0.0.1:8765/calculator.mjs | grep -q free_water_deficit_l
+          curl -fsS http://127.0.0.1:8765/styles.css >/dev/null
+      - name: Build and exercise Docker API
+        run: |
+          docker build -t free-water-deficit-ci .
+          docker run -d --name deficit-api-smoke -p 127.0.0.1:18000:8000 free-water-deficit-ci
+          trap 'docker rm -f deficit-api-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18000/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:18000/health >/dev/null
+          curl -fsS -H 'Content-Type: application/json' \
+            -d '{"weight_kg":60,"serum_sodium":166,"tbw_fraction":0.5}' \
+            http://127.0.0.1:18000/api/water-deficit \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin); assert abs(d["free_water_deficit_l"]-5.5714285714)<1e-6'

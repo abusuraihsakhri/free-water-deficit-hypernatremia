@@ -1,0 +1,13 @@
+.git
+.github
+__pycache__
+*.pyc
+.pytest_cache
+.venv
+.env
+.env.*
+!.env.example
+tests
+test_water_deficit.py
+results.csv
+output.csv
