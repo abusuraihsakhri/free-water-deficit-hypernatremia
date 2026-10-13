@@ -21,7 +21,7 @@ Na and K are in mmol/L; concentrations and correction estimates are approximate.
 
 ## Use
 
-The browser app is in [`web/index.html`](web/index.html). Open it directly in a modern browser (no build required). All inputs are processed **in the browser**; there are no third-party scripts, cookies, or data transmissions. JSON exports are generated locally. Avoid entering identifiable patient information.
+The browser app is in [`web/index.html`](web/index.html). Serve it locally with `python -m http.server 8000 --directory web` and open `http://localhost:8000/`; JavaScript modules may not load over `file://`. No build is required. All inputs are processed **in the browser**; there are no third-party scripts, cookies, or data transmissions. JSON exports are generated locally. Avoid entering identifiable patient information.
 
 ```bash
 python water_deficit.py single --weight-kg 60 --serum-sodium 166 --tbw-fraction 0.5

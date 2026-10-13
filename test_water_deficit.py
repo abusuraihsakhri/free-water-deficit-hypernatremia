@@ -59,3 +59,12 @@ def test_cli_json(capsys):
                  "--tbw-fraction", "0.5"]) == 0
     result = json.loads(capsys.readouterr().out)
     assert result["total_body_water_l"] == 30
+
+
+def test_batch_missing_required_value(tmp_path):
+    source, dest = tmp_path / "in.csv", tmp_path / "out.csv"
+    source.write_text("weight_kg,serum_sodium,tbw_fraction\n"
+                      "60,166\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="Row 2"):
+        process_batch(source, dest)
+    assert not dest.exists()

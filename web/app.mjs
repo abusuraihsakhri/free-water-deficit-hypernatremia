@@ -5,12 +5,14 @@ const profile = document.getElementById("profile");
 const custom = document.getElementById("custom-group");
 const error = document.getElementById("error");
 const results = document.getElementById("results");
+const empty = document.getElementById("empty");
 const download = document.getElementById("download");
 let lastResult = null;
 
 profile.addEventListener("change", () => {
   custom.hidden = profile.value !== "custom";
   results.hidden = true;
+  empty.hidden = false;
   download.disabled = true;
   lastResult = null;
 });
@@ -19,6 +21,7 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   error.hidden = true;
   results.hidden = true;
+  empty.hidden = false;
   download.disabled = true;
   lastResult = null;
   const number = (name) => {
@@ -49,6 +52,7 @@ form.addEventListener("submit", (event) => {
       result.fluid_potassium_mmol_l + " − " + result.serum_sodium_mmol_l +
       ") / (" + result.total_body_water_l.toFixed(2) + " + 1).";
     results.hidden = false;
+    empty.hidden = true;
     download.disabled = false;
   } catch (cause) {
     error.textContent = cause instanceof Error ? cause.message : "Invalid input.";
@@ -64,7 +68,7 @@ download.addEventListener("click", () => {
   a.href = url;
   a.download = "water-deficit-estimate.json";
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 form.addEventListener("reset", () => {
@@ -72,6 +76,7 @@ form.addEventListener("reset", () => {
     custom.hidden = true;
     error.hidden = true;
     results.hidden = true;
+    empty.hidden = false;
     lastResult = null;
     download.disabled = true;
   });

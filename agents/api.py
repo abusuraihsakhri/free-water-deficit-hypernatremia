@@ -1,7 +1,7 @@
 """Optional FastAPI server: validated clinical calculator and legacy audit endpoints."""
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from .base import AuditLogger
+from .base import AuditLogger, SecurityException
 from .models import SystemTaskPayload
 from .supervisor import SystemSupervisor
 from water_deficit import calculate_metrics
@@ -57,7 +57,7 @@ def api_audit(payload: SystemTaskPayload):
 def api_chat(req: ChatRequest):
     try:
         return {"response": supervisor.query_supervisory_chat(req.query)}
-    except ValueError as exc:
+    except (ValueError, SecurityException) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

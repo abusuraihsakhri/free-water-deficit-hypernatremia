@@ -8,7 +8,6 @@ import argparse
 import csv
 import json
 import math
-from pathlib import Path
 
 
 def _number(name, value, low, high):
@@ -73,7 +72,7 @@ def process_batch(input_csv, output_csv):
     with open(input_csv, encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         names = list(reader.fieldnames or [])
-        if len(names) != len(set(names)) or not required.issubset(names):
+        if not names or any(not name for name in names) or len(names) != len(set(names)) or not required.issubset(names):
             raise ValueError("CSV requires unique headers: weight_kg, serum_sodium, tbw_fraction")
         for line, row in enumerate(reader, start=2):
             if None in row:
@@ -85,7 +84,7 @@ def process_batch(input_csv, output_csv):
                         "target_sodium", "fluid_sodium", "fluid_potassium")
                        if key in row and row[key] not in ("", None)}
                 )
-            except ValueError as exc:
+            except (ValueError, TypeError) as exc:
                 raise ValueError(f"Row {line}: {exc}") from exc
             results.append({**{key: _spreadsheet_safe(value) for key, value in row.items()},
                             "total_body_water_l": round(values["total_body_water_l"], 4),
